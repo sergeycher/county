@@ -53,6 +53,8 @@ export class Traits {
   }
 
   reset<T extends Trait>(Trt: TC<T>): T {
+    this.drop(Trt);
+
     const trait = new Trt();
     (trait as any)[CONTAINER_KEY] = this;
     this.traits.set(Trt, trait);
@@ -67,6 +69,7 @@ export class Traits {
     const trait = this.find(Trt);
 
     if (trait) {
+      trait.onBeforeDrop();
       this.traits.delete(Trt);
       this.events.next(new DeleteEvent(trait));
     }

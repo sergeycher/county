@@ -51,6 +51,10 @@ export class Trait {
     return Traits.of(this).has(...Trt);
   }
 
+  onBeforeDrop() {
+
+  }
+
   serialize(): any {
     return true;
   }
