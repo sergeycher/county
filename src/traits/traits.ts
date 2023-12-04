@@ -18,7 +18,15 @@ export class Traits {
 
   private readonly traits = new Map<TC<Trait>, Trait>();
 
-  readonly events = new Emitter<TraitsEvent>()
+  readonly events = new Emitter<TraitsEvent>();
+
+  onChange<T extends Trait>(Trt: TC<T>, handler: (trait: T) => any) {
+    return this.events.subscribe((e) => {
+      if (e.target instanceof Trt) {
+        handler(e.target);
+      }
+    });
+  }
 
   as<T extends Trait>(Trt: TC<T>): T {
     let trait = this.traits.get(Trt) as T;
