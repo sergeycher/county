@@ -10,6 +10,8 @@ import {TiesMap} from "./ties";
 export class Ties extends Trait {
   private ties!: TiesMap;
 
+  readonly unit = Unit.inject();
+
   _init(ties: TiesMap) {
     this.ties = ties;
   }
@@ -23,7 +25,7 @@ export class Ties extends Trait {
   }
 
   isTiedWith(unit: Unit) {
-    return !!(this.ties.find(this.$entity as Unit, unit) || this.ties.find(unit, this.$entity as Unit));
+    return !!(this.ties.find(this.unit, unit) || this.ties.find(unit, this.unit));
   }
 
   to<T extends Trait>(c: TC<T>): T[] {
@@ -42,7 +44,7 @@ export class Ties extends Trait {
         case "in": // o -> this
           return tie.source.has(...withOf);
         case "both":
-          if (tie.source === this.$entity) {
+          if (tie.source === this.unit) {
             return tie.dest.has(...withOf);
           } else {
             return tie.source.has(...withOf);

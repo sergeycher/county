@@ -1,4 +1,4 @@
-import {Traits} from "../traits/traits";
+import {CURRENT, Traits, TraitsError} from "../traits/traits";
 import {Entity} from "../core/types";
 import {Unit} from "../units/unit";
 import {Trait} from "../traits/trait";
@@ -6,6 +6,14 @@ import {Trait} from "../traits/trait";
 export class Tie extends Traits implements Entity {
   static id(source: Unit, dest: Unit) {
     return source.id + '->' + dest.id;
+  }
+
+  static inject(): Tie {
+    if (CURRENT instanceof Tie) {
+      return CURRENT;
+    }
+
+    throw new TraitsError(`Current entity is not a tie`, CURRENT);
   }
 
   get id() {
@@ -16,7 +24,7 @@ export class Tie extends Traits implements Entity {
     super();
   }
 
-  isConnectedTo(target: Unit|Trait) {
+  isConnectedTo(target: Unit | Trait) {
     target = Unit.from(target);
 
     return (this.dest === target) || (this.source === target);
@@ -24,5 +32,6 @@ export class Tie extends Traits implements Entity {
 
   destroy() {
     this.events.dispose();
+    this.empty();
   }
 }

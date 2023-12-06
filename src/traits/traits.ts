@@ -7,19 +7,37 @@ import {Trait} from "./trait";
 const CONTAINER_KEY = Symbol();
 const ATTACHMENT_KEY = Symbol();
 
+export let CURRENT: Traits | undefined = undefined;
+
+export class TraitsError extends Error {
+  constructor(msg: string, readonly entity?: Traits, readonly trait?: Trait) {
+    super(msg);
+  }
+}
+
 export class Traits {
-  static of(from: Trait): Traits {
-    return (from as any)[CONTAINER_KEY] as Traits;
+  static of(trait: Trait): Traits {
+    return (trait as any)[CONTAINER_KEY] as Traits;
   }
 
-  static from(from: Object): Traits {
-    return (from as any)[ATTACHMENT_KEY] as Traits;
+  static from(carrier: Object): Traits {
+    let traits = (carrier as any)[ATTACHMENT_KEY] as Traits;
+
+    if (!traits) {
+      traits = new Traits();
+      (carrier as any)[ATTACHMENT_KEY] = traits;
+    }
+
+    return traits;
   }
 
-  private readonly traits = new Map<TC<Trait>, Trait>();
+  private readonly traits = new Map<TC, Trait>();
 
   readonly events = new Emitter<TraitsEvent>();
 
+  /**
+   * Отслеживает вообще все события связанные с трейтом - даже удаление
+   */
   onChange<T extends Trait>(Trt: TC<T>, handler: (trait: T) => any) {
     return this.events.subscribe((e) => {
       if (e.target instanceof Trt) {
@@ -28,16 +46,28 @@ export class Traits {
     });
   }
 
-  as<T extends Trait>(Trt: TC<T>): T {
+  /**
+   * Returns trait and runs `handler` on it. If trait not exists - creates it.
+   *
+   * handler.init===true if trait created just now
+   */
+  as<T extends Trait>(Trt: TC<T>, handler?: (trait: T, init: boolean) => any): T {
     let trait = this.traits.get(Trt) as T;
+    handler = handler || (() => void 0);
 
-    if (!trait) {
+    if (trait) {
+      handler(trait, false);
+    } else {
       trait = this.reset(Trt);
+      handler(trait, true);
     }
 
     return trait;
   }
 
+  /**
+   * Throws error if trait does not exist
+   */
   req<T extends Trait>(Trt: TC<T>): T {
     const t = this.find(Trt);
 
@@ -63,6 +93,8 @@ export class Traits {
   reset<T extends Trait>(Trt: TC<T>): T {
     this.drop(Trt);
 
+    CURRENT = this;
+
     const trait = new Trt();
     (trait as any)[CONTAINER_KEY] = this;
     this.traits.set(Trt, trait);
@@ -70,17 +102,30 @@ export class Traits {
     this.events.next(new CreateEvent(trait));
     this.events.next(new ChangeEvent(trait));// да, сразу два события
 
+    trait.onAfterCreate();
+
+    CURRENT = undefined;
+
     return trait;
   }
 
-  drop<T extends Trait>(Trt: TC<T>): void {
-    const trait = this.find(Trt);
+  drop<T extends Trait>(...Traits: TC<T>[]): void {
+    Traits.forEach(Trt => {
+      const trait = this.find(Trt);
 
-    if (trait) {
-      trait.onBeforeDrop();
-      this.traits.delete(Trt);
-      this.events.next(new DeleteEvent(trait));
-    }
+      if (trait) {
+        trait.onBeforeDrop();
+        this.traits.delete(Trt);
+        this.events.next(new DeleteEvent(trait));
+      }
+    });
+  }
+
+  /**
+   * Clear all traits
+   */
+  empty() {
+    this.traits.forEach((_, Trt) => this.drop(Trt));
   }
 
   serialize() {

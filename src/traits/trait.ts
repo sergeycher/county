@@ -21,6 +21,9 @@ export class Trait {
     return traitName(this.constructor as TC);
   }
 
+  /**
+   * @deprecated - use Unit.inject() or Tie.inject() instead
+   */
   get $entity(): Entity & Traits {
     return Traits.of(this) as any;
   }
@@ -49,6 +52,10 @@ export class Trait {
 
   has<T extends Trait>(...Trt: TC<T>[]) {
     return Traits.of(this).has(...Trt);
+  }
+
+  onAfterCreate() {
+
   }
 
   onBeforeDrop() {

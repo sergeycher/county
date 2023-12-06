@@ -37,10 +37,10 @@ describe('Events', () => {
 
     const despawned = realm.despawn(a);
     despawned.should.have.length(2);
-    events.should.have.length(9);
+    events.should.have.length(10); // +1 Unit +1 Tie +1 Trait(Ties)
 
     realm.despawn(b);
-    events.should.have.length(10);
+    events.should.have.length(12); // +1 Unit +1 Trait(Ties)
   });
 
   it('should emit traits', () => {
