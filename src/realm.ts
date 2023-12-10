@@ -22,6 +22,10 @@ export class Realm extends Graph {
     return this.units.select(...traits);
   }
 
+  filter(filt: (u: Unit) => boolean): Unit[] {
+    return this.units.filter(filt);
+  }
+
   fromJSON(DATA: Record<string, any>) {
     for (const id in DATA) {
       // TODO: transaction

@@ -109,7 +109,7 @@ export class Traits {
     return trait;
   }
 
-  drop<T extends Trait>(...Traits: TC<T>[]): void {
+  drop(...Traits: TC[]): this {
     Traits.forEach(Trt => {
       const trait = this.find(Trt);
 
@@ -119,6 +119,8 @@ export class Traits {
         this.events.next(new DeleteEvent(trait));
       }
     });
+
+    return this;
   }
 
   /**
@@ -126,6 +128,7 @@ export class Traits {
    */
   empty() {
     this.traits.forEach((_, Trt) => this.drop(Trt));
+    return this;
   }
 
   serialize() {

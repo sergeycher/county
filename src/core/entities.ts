@@ -18,6 +18,18 @@ export class Entities<T extends Entity & Traits> {
     return units;
   }
 
+  filter(filt: (u: T) => boolean): T[] {
+    const units: T[] = [];
+
+    this.items.forEach((u) => {
+      if (filt(u)) {
+        units.push(u);
+      }
+    });
+
+    return units;
+  }
+
   map<K>(doer: (u: T, id: string) => K): K[] {
     const res: K[] = [];
 
