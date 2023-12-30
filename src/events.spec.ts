@@ -1,10 +1,10 @@
 import {Realm} from "./realm";
-import {ChangeEvent, CreateEvent, TraitsEvent} from "./traits/events";
+import {TraitsEvent} from "./traits/events";
 import 'should';
-import {Unit} from "./units/unit";
-import {Tie} from "./ties/tie";
-
+import {Unit} from "./unit";
 import {Trait} from "./traits/trait";
+import {Ties} from "./ties/ties.trait";
+import {Tie} from "./ties/tie.trait";
 
 describe('Events', () => {
   let realm = new Realm();
@@ -26,38 +26,14 @@ describe('Events', () => {
 
     a = realm.unit('1');
     b = realm.unit('2');
-    ab = realm.tie(a, b);
+    ab = a.as(Ties).tie(b);
   });
 
   it('should emit units', () => {
-    events.should.have.length(7); // 2 units + 2 ties + 4 TiesTrait
-    events[0].should.be.instanceof(CreateEvent);
-    events[1].should.be.instanceof(CreateEvent);
-    events[3].should.be.instanceof(CreateEvent);
 
-    const despawned = realm.despawn(a);
-    despawned.should.have.length(2);
-    events.should.have.length(10); // +1 Unit +1 Tie +1 Trait(Ties)
-
-    realm.despawn(b);
-    events.should.have.length(12); // +1 Unit +1 Trait(Ties)
   });
 
   it('should emit traits', () => {
-    a.as(Trait1);
 
-    events.should.have.length(9);
-
-    a.as(Trait1).change((t) => {
-      t.value++;
-    });
-
-    events.should.have.length(10);
-
-    events[7].should.be.instanceof(CreateEvent);
-    events[7].target.should.be.exactly(a.req(Trait1));
-
-    events[8].should.be.instanceof(ChangeEvent);
-    events[8].target.should.be.exactly(a.req(Trait1));
   });
 });

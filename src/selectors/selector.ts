@@ -1,14 +1,12 @@
-import {Unit} from "./units/unit";
-import {Tie} from "./ties/tie";
-import {Realm} from "./realm";
-import {CreateEvent, DeleteEvent} from "./traits/events";
-import {Emitter} from "./core/emitter";
-import {TC} from "./traits/types";
-import {Trait} from "./traits/trait";
+import {Unit} from "../unit";
+import {Realm} from "../realm";
+import {CreateEvent, DeleteEvent} from "../traits/events";
+import {Emitter} from "../core/emitter";
+import {TC, Trait} from "../traits/trait";
 
 export function createSelector(...having: TC[]): (graph: Realm, debug?: boolean) => [Unit[], Emitter<Unit[]>] {
   return (graph) => {
-    const index = new Map<string, Unit | Tie>();
+    const index = new Map<string, Unit>();
     const emitter = new Emitter<Unit[]>();
 
     // initial index value
@@ -20,25 +18,18 @@ export function createSelector(...having: TC[]): (graph: Realm, debug?: boolean)
       const result = new Set<Unit>();
 
       index.forEach(e => {
-        if (e instanceof Unit) {
-          result.add(e);
-        } else {
-          result.add(e.dest);
-          result.add(e.source);
-        }
+        result.add(e);
       });
 
       return Array.from(result.values())
     }
 
-    function check(e: Tie | Unit) {
-      return (e instanceof Unit)
-        ? e.has(...having)
-        : false //(e.source.has(having) || e.dest.has(having) || e.has(having));
+    function check(e: Unit) {
+      return e.has(...having);
     }
 
     const unsub = graph.subscribe(e => {
-      let u = e.entity as Unit | Tie;
+      let u = e.entity as Unit;
       let changed = false;
 
       if (DeleteEvent.from(e) && !e.hasSomeTarget(Trait)) {

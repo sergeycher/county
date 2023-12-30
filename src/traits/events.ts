@@ -8,7 +8,7 @@ export type EventTarget = EventTargetEntity | Trait;
 export class TraitsEvent {
   get entity(): EventTargetEntity {
     if (this.target instanceof Trait) {
-      return this.target.$entity as EventTargetEntity;
+      return Traits.of(this.target) as EventTargetEntity;
     } else {
       return this.target;
     }

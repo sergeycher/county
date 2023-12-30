@@ -6,6 +6,16 @@ export class Emitter<T> {
     this.handlers.forEach(h => h(value));
   }
 
+  filter(filt: (e: T) => any): Emitter<T> {
+    const child = new Emitter<T>();
+
+    const unsub = this.subscribe((e) => child.next(e));
+
+    child.onDispose(unsub);
+
+    return child;
+  }
+
   subscribe(handler: (v: T) => any) {
     this.handlers.add(handler);
 

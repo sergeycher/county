@@ -1,9 +1,10 @@
 import 'should';
-import {Realm} from "./realm";
-import {Unit} from "./units/unit";
-import {Tie} from "./ties/tie";
+import {Realm} from "../realm";
+import {Unit} from "../unit";
 import {createSelector} from "./selector";
-import {Trait} from "./traits/trait";
+import {Trait} from "../traits/trait";
+import {Ties} from "../ties/ties.trait";
+import {Tie} from "../ties/tie.trait";
 
 describe('Selectors', () => {
   let realm = new Realm();
@@ -14,6 +15,10 @@ describe('Selectors', () => {
     value = 0;
   }
 
+  class Trait2 extends Trait {
+    value = 0;
+  }
+
   const select = createSelector(Trait1);
 
   beforeEach(() => {
@@ -21,7 +26,7 @@ describe('Selectors', () => {
 
     a = realm.unit('1');
     b = realm.unit('2');
-    ab = realm.tie(a, b);
+    ab = a.as(Ties).tie(b);
   });
 
   it('should watch', () => {
@@ -36,16 +41,16 @@ describe('Selectors', () => {
     b.as(Trait1);
     units.should.have.length(2);
 
-    ab.as(Trait1);
+    ab.root.as(Trait2);
     units.should.have.length(2);
 
     b.drop(Trait1);
     units.should.have.length(1);
-    realm.despawn(ab);
+    ab.break();
     units.should.have.length(1);
 
     emitter.dispose();
-    realm.despawn(a, b, ab);
+    realm.despawn(a, b, ab.root);
     units.should.have.length(1);
   });
 });

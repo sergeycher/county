@@ -1,8 +1,7 @@
 import {Emitter} from "../core/emitter";
 import {ChangeEvent, CreateEvent, DeleteEvent, TraitsEvent} from "./events";
 import {traitName} from "./traits-registry";
-import {TC} from "./types";
-import {Trait} from "./trait";
+import {TC, Trait} from "./trait";
 
 const CONTAINER_KEY = Symbol();
 const ATTACHMENT_KEY = Symbol();
@@ -16,6 +15,9 @@ export class TraitsError extends Error {
 }
 
 export class Traits {
+  /**
+   * Returns root object of specified trait
+   */
   static of(trait: Trait): Traits {
     return (trait as any)[CONTAINER_KEY] as Traits;
   }
@@ -34,6 +36,21 @@ export class Traits {
   private readonly traits = new Map<TC, Trait>();
 
   readonly events = new Emitter<TraitsEvent>();
+
+  /**
+   * Calls doer on specified trait and emits ChangeEvent
+   */
+  change<T extends Trait>(Trt: TC<T>, doer?: (trait: T) => any) {
+    const trait = this.as(Trt)
+
+    if (doer) {
+      doer(trait);
+    }
+
+    this.events.next(new ChangeEvent(trait));
+
+    return this;
+  }
 
   /**
    * Отслеживает вообще все события связанные с трейтом - даже удаление
@@ -66,7 +83,7 @@ export class Traits {
   }
 
   /**
-   * Throws error if trait does not exist
+   * Require trait. Throws error if trait does not exist
    */
   req<T extends Trait>(Trt: TC<T>): T {
     const t = this.find(Trt);
@@ -99,17 +116,24 @@ export class Traits {
     (trait as any)[CONTAINER_KEY] = this;
     this.traits.set(Trt, trait);
 
+    // да, сразу два события - одно на создание а второе на изменение
+    // TODO: не уверен что события на создание трейта нужны
     this.events.next(new CreateEvent(trait));
-    this.events.next(new ChangeEvent(trait));// да, сразу два события
+    this.events.next(new ChangeEvent(trait));
 
-    trait.onAfterCreate();
+    try {
+      trait.onAfterCreate();
+    } catch (e) {
+      this.drop(Trt);
+      throw e;
+    }
 
     CURRENT = undefined;
 
     return trait;
   }
 
-  drop(...Traits: TC[]): this {
+  drop(...Traits: TC[]): Traits {
     Traits.forEach(Trt => {
       const trait = this.find(Trt);
 
@@ -126,7 +150,7 @@ export class Traits {
   /**
    * Clear all traits
    */
-  empty() {
+  clear(): Traits {
     this.traits.forEach((_, Trt) => this.drop(Trt));
     return this;
   }
@@ -134,9 +158,9 @@ export class Traits {
   serialize() {
     const data: Record<string, any> = {};
 
-    this.traits.forEach(t => {
-      if (t.$name) {
-        data[t.$name] = t.serialize();
+    this.traits.forEach((trait) => {
+      if (trait.$name && trait.serialize) {
+        data[trait.$name] = trait.serialize();
       }
     })
 
@@ -148,7 +172,11 @@ export class Traits {
       const tc = Trait.find(n);
 
       if (tc) {
-        this.as(tc).deserialize(data[n]);
+        const trait = this.as(tc);
+
+        if (trait.deserialize) {
+          trait.deserialize(data[n]);
+        }
       } else {
         console.log(`[ONTHOLOGIC] Unable to find trait "${n}"`)
       }

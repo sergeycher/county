@@ -1,9 +1,10 @@
 import 'should';
-import {Realm} from "./realm";
-import {Unit} from "./units/unit";
-import {Tie} from "./ties/tie";
-import {Trait} from "./traits/trait";
+import {Realm} from "../realm";
+import {Unit} from "../unit";
+import {Trait} from "../traits/trait";
 import {having, Selector} from "./selector2";
+import {Ties} from "../ties/ties.trait";
+import {Tie} from "../ties/tie.trait";
 
 describe('Selector 2', () => {
   let realm = new Realm();
@@ -14,6 +15,10 @@ describe('Selector 2', () => {
     value = 0;
   }
 
+  class Trait2 extends Trait {
+    value = 0;
+  }
+
   const selector = Selector.create(having(Trait1));
 
   beforeEach(() => {
@@ -21,39 +26,39 @@ describe('Selector 2', () => {
 
     a = realm.unit('a');
     b = realm.unit('b');
-    ab = realm.tie(a, b);
+    ab = a.as(Ties).tie(b);
   });
 
   it('should watch', () => {
     let units$ = selector().watch(realm);
     let counter = 0;
 
-    units$.subscribe((v) => counter++);
+    units$.subscribe(() => counter++);
 
-    counter.should.be.exactly(0);
     units$.should.have.length(0);
+    counter.should.be.exactly(0);
 
     a.as(Trait1);
-    counter.should.be.exactly(1);
     units$.should.have.length(1);
+    counter.should.be.exactly(1);
 
     b.as(Trait1);
-    counter.should.be.exactly(2);
     units$.should.have.length(2);
+    counter.should.be.exactly(2);
 
-    ab.as(Trait1);
-    counter.should.be.exactly(2);
+    ab.root.as(Trait2);
     units$.should.have.length(2);
+    counter.should.be.exactly(2);
 
     b.drop(Trait1);
     counter.should.be.exactly(3);
     units$.should.have.length(1);
-    realm.despawn(ab);
+    ab.break();
     counter.should.be.exactly(3);
     units$.should.have.length(1);
 
     units$.dispose();
-    realm.despawn(a, b, ab);
+    realm.despawn(a, b, ab.root);
     units$.should.have.length(1);
   });
 

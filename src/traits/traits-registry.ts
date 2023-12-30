@@ -1,4 +1,4 @@
-import {TC} from "./types";
+import {TC} from "./trait";
 
 export const NAME_KEY = Symbol();
 

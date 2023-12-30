@@ -1,31 +1,32 @@
-import {Trait} from "../traits/trait";
-import {Unit} from "../units/unit";
-import {TC} from "../traits/types";
-import {Tie} from "./tie";
-import {TiesMap} from "./ties";
+import {TC, Trait} from "../traits/trait";
+import {Unit} from "../unit";
+import {Tie} from "./tie.trait";
 
 /**
  * Трейт для доступа к связям
  */
 export class Ties extends Trait {
-  private ties!: TiesMap;
-
   readonly unit = Unit.inject();
 
-  _init(ties: TiesMap) {
-    this.ties = ties;
+  readonly __ties = new Set<Tie>();
+
+  select(type: 'out' | 'in', tiesHaving: TC[], targetsHaving: TC[]): Unit[] {
+    return this.list(type, targetsHaving)
+      .filter(t => t.root.has(...tiesHaving))
+      .map((t) => {
+        return type === 'in' ? t.src : t.dest;
+      });
   }
 
-  connect(dest: Unit | Trait) {
-    return this.ties.get(this, dest);
+  tie(dest: Unit): Tie {
+    return this.unit.realm.unit(`${this.unit.id}->${dest.id}`).as(Tie).__init(this.unit, dest);
   }
 
-  connectedTo(target: Unit) {
-    return !!this._list('both').find(t => t.dest === target || t.source === target);
-  }
+  connectedTo(target: Unit): boolean {
+    const tie1 = this.unit.realm.unit(`${this.unit.id}->${target.id}`, false);
+    const tie2 = this.unit.realm.unit(`${target.id}->${this.unit.id}`, false);
 
-  isTiedWith(unit: Unit) {
-    return !!(this.ties.find(this.unit, unit) || this.ties.find(unit, this.unit));
+    return !!(tie1 || tie2);
   }
 
   to<T extends Trait>(c: TC<T>): T[] {
@@ -33,38 +34,52 @@ export class Ties extends Trait {
   }
 
   from<T extends Trait>(c: TC<T>): T[] {
-    return this.list('in', [c]).map(t => t.source.req(c));
+    return this.list('in', [c]).map(t => t.src.req(c));
   }
 
-  list(type: 'out' | 'in' | 'both', withOf: TC[] = []): Tie[] {
+  onAfterCreate() {
+    if (this.unit.has(Tie)) {
+      throw new Error(`Unable to use Tie as Ties`);
+    }
+  }
+
+  onBeforeDrop() {
+    this.list().forEach(t => t.root.despawn());
+  }
+
+  list(type: 'out' | 'in' | 'both' = 'both', withOf: TC[] = []): Tie[] {
     return this._list(type).filter(tie => {
       switch (type) {
         case "out": // this -> o
           return tie.dest.has(...withOf);
         case "in": // o -> this
-          return tie.source.has(...withOf);
+          return tie.src.has(...withOf);
         case "both":
-          if (tie.source === this.unit) {
+          if (tie.src === this.unit) {
             return tie.dest.has(...withOf);
           } else {
-            return tie.source.has(...withOf);
+            return tie.src.has(...withOf);
           }
       }
     });
   }
 
   private _list(type: 'out' | 'in' | 'both'): Tie[] {
-    if (type === 'out') {
-      return this.ties.findBy({src: this});
-    }
-    if (type === 'in') {
-      return this.ties.findBy({dest: this});
+    const result: Tie[] = [];
+
+    const u = (tie: Tie) => {
+      if (type === 'in') return [tie.dest];
+      if (type === 'out') return [tie.src];
+
+      return [tie.src, tie.dest];
     }
 
-    // FIXME: алгоритм крайне неоптимален
-    return [
-      ...this.ties.findBy({src: this}),
-      ...this.ties.findBy({dest: this})
-    ];
+    this.__ties.forEach((tie) => {
+      if (u(tie).includes(this.unit)) {
+        result.push(tie);
+      }
+    });
+
+    return result;
   }
 }

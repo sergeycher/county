@@ -1,53 +1,91 @@
-import {Unit} from "./units/unit";
-import {TraitsEvent} from "./traits/events";
-import {Graph} from "./graph";
-import {Tie} from "./ties/tie";
-import {TC} from "./traits/types";
-import {Ties} from "./ties/ties.trait";
+import {RealmLike, Unit} from "./unit";
+import {CreateEvent, TraitsEvent} from "./traits/events";
+import {Emitter} from "./core/emitter";
+import {TC} from "./traits/trait";
 
-export class Realm extends Graph {
-  subscribe(handler: (v: TraitsEvent) => any) {
+function uid() {
+  return Math.random().toString(36).split('.')[1];
+}
+
+export class Realm implements RealmLike {
+  readonly events = new Emitter<TraitsEvent>();
+
+  private units = new Map<string, Unit>();
+
+  unit(): Unit;
+  unit(id: string): Unit;
+  unit(id: string, createIfNotExist: false): Unit | undefined;
+  unit(id: string, createIfNotExist: true): Unit;
+  unit(id: string = uid(), createIfNotExist: boolean = true): Unit | undefined {
+    let unit = this.units.get(id)!;
+
+    if (!unit && createIfNotExist) {
+      unit = new Unit(id, this);
+      unit.events.retranslateTo(this.events);
+      this.units.set(id, unit);
+      this.events.next(new CreateEvent(unit));
+    }
+
+    return unit;
+  }
+
+  subscribe(handler: (v: TraitsEvent) => any): () => void {
     return this.events.subscribe(handler);
   }
 
   map<T>(doer: (u: Unit, id: string) => T): T[] {
-    return this.units.map(doer);
-  }
+    const result: T[] = [];
 
-  mapTies<T>(doer: (t: Tie, id: string) => T): T[] {
-    return this.ties.map(doer);
+    this.units.forEach((u, i) => result.push(doer(u, i)));
+
+    return result;
   }
 
   select(...traits: TC[]): Unit[] {
-    return this.units.select(...traits);
+    return this.filter(u => u.has(...traits));
   }
 
   filter(filt: (u: Unit) => boolean): Unit[] {
-    return this.units.filter(filt);
+    const result: Unit[] = [];
+
+    this.units.forEach((u) => {
+      if (filt(u))
+        result.push(u);
+    });
+
+    return result;
+  }
+
+  /**
+   * Returns REALLY despawned units.
+   */
+  despawn(...units: Unit[]): Unit[] {
+    return units.filter(u => {
+      const deleted = this.delete(u);
+
+      if (deleted) {
+        deleted._destroy();
+      }
+
+      return deleted;
+    });
+  }
+
+  clear() {
+    this.despawn(...this.map(u => u));
+    this.units.clear();
+  }
+
+  private delete(unit: Unit): Unit | undefined {
+    if (this.units.has(unit.id)) {
+      this.units.delete(unit.id);
+      return unit;
+    }
   }
 
   fromJSON(DATA: Record<string, any>) {
     for (const id in DATA) {
-      // TODO: transaction
-      const unit = this.unit(id);
-      const data = DATA[id];
-      const _data: Record<string, any> = {};
-
-      for (let t in data) {
-        if (t.startsWith('$->')) {
-          const destId = t.replace('$->', '');
-          const dest = this.unit(destId);
-          this.tie(unit, dest).deserialize(data[t]);
-        } else if (t.startsWith('$<-')) {
-          const srcId = t.replace('$<-', '');
-          const src = this.unit(srcId);
-          this.tie(src, unit).deserialize(data[t]);
-        } else {
-          _data[t] = data[t];
-        }
-      }
-
-      unit.deserialize(_data);
+      this.unit(id).deserialize(DATA[id]);
     }
   }
 
@@ -55,13 +93,7 @@ export class Realm extends Graph {
     const data: Record<string, any> = {};
 
     this.map((u, id) => {
-      const ties: Record<string, any> = {};
-
-      u.as(Ties).list('out').forEach(t => {
-        ties['$->' + t.dest.id] = t.serialize();
-      });
-
-      data[id] = {...u.serialize(), ...ties};
+      data[id] = u.serialize();
     });
 
     return data;

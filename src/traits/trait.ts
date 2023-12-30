@@ -1,11 +1,18 @@
-import {TC} from "./types";
 import {traitName, TraitsRegistry} from "./traits-registry";
 import {TRAIT} from "./decorators";
-import {Entity} from "../core/types";
-import {ChangeEvent} from "./events";
-import {Traits} from "./traits";
 
-export class Trait {
+export interface Serializable<D> {
+  serialize(): D;
+
+  deserialize(data: D): void;
+}
+
+export type TC<T extends Trait = Trait> = new () => T;
+
+export class Trait implements Serializable<any> {
+  /**
+   * Find trait in registry by name
+   */
   static find(name: string): TC | undefined {
     return TraitsRegistry.get().find(name);
   }
@@ -22,38 +29,9 @@ export class Trait {
   }
 
   /**
-   * @deprecated - use Unit.inject() or Tie.inject() instead
+   * If throws an error trait will be immediately removed from unit
+   * Error will be rethrow
    */
-  get $entity(): Entity & Traits {
-    return Traits.of(this) as any;
-  }
-
-  get $id() {
-    return this.$entity.id;
-  }
-
-  change(doer?: (self: this) => any) {
-    if (doer) {
-      doer(this);
-    }
-
-    Traits.of(this).events.next(new ChangeEvent(this));
-
-    return this;
-  }
-
-  as<T extends Trait>(Trt: TC<T>): T {
-    return Traits.of(this).as(Trt);
-  }
-
-  req<T extends Trait>(Trt: TC<T>): T {
-    return Traits.of(this).req(Trt);
-  }
-
-  has<T extends Trait>(...Trt: TC<T>[]) {
-    return Traits.of(this).has(...Trt);
-  }
-
   onAfterCreate() {
 
   }

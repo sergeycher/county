@@ -1,7 +1,21 @@
-import {CURRENT, Traits, TraitsError} from "../traits/traits";
-import {Entity} from "../core/types";
-import {DeleteEvent} from "../traits/events";
-import {Trait} from "../traits/trait";
+import {CURRENT, Traits, TraitsError} from "./traits/traits";
+import {Entity} from "./core/types";
+import {DeleteEvent} from "./traits/events";
+import {Trait} from "./traits/trait";
+
+export interface RealmLike {
+  despawn(unit: Unit): void;
+
+  unit(): Unit;
+
+  unit(id: string): Unit;
+
+  unit(id: string, createIfNotExist: false): Unit | undefined;
+
+  unit(id: string, createIfNotExist: true): Unit;
+
+  unit(id?: string, createIfNotExist?: boolean): Unit | undefined;
+}
 
 export class Unit extends Traits implements Entity {
   /**
@@ -29,12 +43,16 @@ export class Unit extends Traits implements Entity {
     return unit;
   }
 
-  constructor(readonly id: string) {
+  constructor(readonly id: string, readonly realm: RealmLike) {
     super();
   }
 
-  destroy() {
-    this.empty();
+  despawn(): void {
+    this.realm.despawn(this);
+  }
+
+  _destroy() {
+    this.clear();
     this.events.next(new DeleteEvent(this));
     this.events.dispose();
   }
