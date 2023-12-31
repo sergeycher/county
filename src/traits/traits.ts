@@ -1,7 +1,8 @@
 import {Emitter} from "../core/emitter";
-import {ChangeEvent, CreateEvent, DeleteEvent, TraitsEvent} from "./events";
 import {traitName} from "./traits-registry";
 import {TC, Trait} from "./trait";
+import {CountyEvent} from "../core/events";
+import {Change, Create, Delete, EventType} from "./events";
 
 const CONTAINER_KEY = Symbol();
 const ATTACHMENT_KEY = Symbol();
@@ -35,7 +36,8 @@ export class Traits {
 
   private readonly traits = new Map<TC, Trait>();
 
-  readonly events = new Emitter<TraitsEvent>();
+  // readonly events = new Emitter<TraitsEvent>();
+  readonly events = new Emitter<CountyEvent<EventType, Trait>>();
 
   /**
    * Calls doer on specified trait and emits ChangeEvent
@@ -47,7 +49,7 @@ export class Traits {
       doer(trait);
     }
 
-    this.events.next(new ChangeEvent(trait));
+    this.events.next(Change(trait));
 
     return this;
   }
@@ -118,8 +120,8 @@ export class Traits {
 
     // да, сразу два события - одно на создание а второе на изменение
     // TODO: не уверен что события на создание трейта нужны
-    this.events.next(new CreateEvent(trait));
-    this.events.next(new ChangeEvent(trait));
+    this.events.next(Create(trait));
+    this.events.next(Change(trait));
 
     try {
       trait.onAfterCreate();
@@ -140,7 +142,7 @@ export class Traits {
       if (trait) {
         trait.onBeforeDrop();
         this.traits.delete(Trt);
-        this.events.next(new DeleteEvent(trait));
+        this.events.next(Delete(trait));
       }
     });
 

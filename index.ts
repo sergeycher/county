@@ -1,9 +1,9 @@
-export {Trait} from "./src/traits/trait";
-export {Traits} from "./src/traits/traits";
-export {Unit} from './src/unit';
-export {Ties} from "./src/ties/ties.trait";
-export {Tie} from "./src/ties/tie.trait";
+export * from "./src/traits";
+export * from './src/unit';
+export * from "./src/ties";
 export {Realm} from './src/realm';
+
 export {createSelector} from "./src/selectors/selector";
+
 export * from "./src/selectors/selector2";
 export {Collection} from "./src/selectors/collection";

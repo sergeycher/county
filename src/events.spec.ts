@@ -1,14 +1,14 @@
 import {Realm} from "./realm";
-import {TraitsEvent} from "./traits/events";
 import 'should';
 import {Unit} from "./unit";
-import {Trait} from "./traits/trait";
-import {Ties} from "./ties/ties.trait";
-import {Tie} from "./ties/tie.trait";
+import {Trait} from "./traits";
+import {Tie, Ties} from "./ties";
+import {CountyEvent} from "./core/events";
+import {EventType} from "./traits/events";
 
 describe('Events', () => {
   let realm = new Realm();
-  let events: TraitsEvent[] = [];
+  let events: CountyEvent<EventType, Unit | Trait>[] = [];
   let a: Unit, b: Unit;
   let ab: Tie;
 

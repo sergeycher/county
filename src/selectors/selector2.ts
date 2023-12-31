@@ -1,8 +1,10 @@
 import {Unit} from "../unit";
 import {Realm} from "../realm";
-import {CreateEvent, DeleteEvent, TraitsEvent} from "../traits/events";
+import {EventType} from "../traits/events";
 import {TC, Trait} from "../traits/trait";
 import {Collection} from "./collection";
+import {Traits} from "../traits";
+import {CountyEvent} from "../core/events";
 
 export type Filter = (u: Unit) => boolean;
 
@@ -80,23 +82,29 @@ export class Selector {
     this._index.dispose();
   }
 
-  private _handleEvent(e: TraitsEvent) {
-    const u = e.entity as Unit;
+  private _handleEvent(e: CountyEvent<EventType, unknown>) {
+    const handleTrait = (tr: Trait) => this._handleTrait(tr);
 
-    if (DeleteEvent.from(e) && !e.hasSomeTarget(Trait) && this._index.has(u.id)) {
-      this._index.drop(u);
-      this._units = this._index.list();
-      return;
-    }
-
-    if (DeleteEvent.from(e) || CreateEvent.from(e)) {
-      if (this.filterFunc(u)) {
-        this._index.add(u);
-      } else {
+    [
+      Unit.when(EventType.delete, u => {
         this._index.drop(u);
-      }
+        this._units = this._index.list();
+      }),
 
-      this._units = this._index.list();
+      Unit.whenTrait(EventType.delete, handleTrait),
+      Unit.whenTrait(EventType.create, handleTrait)
+    ].map(w => w(e));
+  }
+
+  private _handleTrait(tr: Trait) {
+    const u = Traits.of(tr) as Unit;
+
+    if (this.filterFunc(u)) {
+      this._index.add(u);
+    } else {
+      this._index.drop(u);
     }
+
+    this._units = this._index.list();
   }
 }
