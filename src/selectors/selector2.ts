@@ -88,7 +88,7 @@ export class Selector {
     [
       Unit.when(EventType.delete, u => {
         this._index.drop(u);
-        this._units = this._index.list();
+        this._units = this._index.items;
       }),
 
       Unit.whenTrait(EventType.delete, handleTrait),
@@ -105,6 +105,6 @@ export class Selector {
       this._index.drop(u);
     }
 
-    this._units = this._index.list();
+    this._units = this._index.items;
   }
 }
