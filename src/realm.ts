@@ -1,14 +1,15 @@
 import {RealmLike, Unit} from "./unit";
-import {CreateEvent, TraitsEvent} from "./traits/events";
+import {Create, Delete, EventType} from "./traits/events";
 import {Emitter} from "./core/emitter";
-import {TC} from "./traits/trait";
+import {TC, Trait} from "./traits/trait";
+import {CountyEvent} from "./core/events";
 
 function uid() {
   return Math.random().toString(36).split('.')[1];
 }
 
 export class Realm implements RealmLike {
-  readonly events = new Emitter<TraitsEvent>();
+  readonly events = new Emitter<CountyEvent<EventType, Trait | Unit>>();
 
   private units = new Map<string, Unit>();
 
@@ -21,15 +22,15 @@ export class Realm implements RealmLike {
 
     if (!unit && createIfNotExist) {
       unit = new Unit(id, this);
-      unit.events.retranslateTo(this.events);
+      unit.events.retranslateTo(this.events as Emitter<CountyEvent<EventType, Trait>>);
       this.units.set(id, unit);
-      this.events.next(new CreateEvent(unit));
+      this.events.next(Create(unit));
     }
 
     return unit;
   }
 
-  subscribe(handler: (v: TraitsEvent) => any): () => void {
+  subscribe(handler: (v: CountyEvent<EventType, Trait | Unit>) => any): () => void {
     return this.events.subscribe(handler);
   }
 
@@ -65,6 +66,7 @@ export class Realm implements RealmLike {
 
       if (deleted) {
         deleted._destroy();
+        this.events.next(Delete(deleted));
       }
 
       return deleted;

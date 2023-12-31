@@ -1,10 +1,9 @@
 import 'should';
 import {Realm} from "../realm";
 import {Unit} from "../unit";
-import {Trait} from "../traits/trait";
+import {Trait} from "../traits";
 import {having, Selector} from "./selector2";
-import {Ties} from "../ties/ties.trait";
-import {Tie} from "../ties/tie.trait";
+import {Tie, Ties} from "../ties";
 
 describe('Selector 2', () => {
   let realm = new Realm();

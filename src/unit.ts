@@ -1,7 +1,8 @@
 import {CURRENT, Traits, TraitsError} from "./traits/traits";
 import {Entity} from "./core/types";
-import {DeleteEvent} from "./traits/events";
-import {Trait} from "./traits/trait";
+import {Trait} from "./traits";
+import {EventType} from "./traits/events";
+import {CountyEvent} from "./core/events";
 
 export interface RealmLike {
   despawn(unit: Unit): void;
@@ -18,6 +19,22 @@ export interface RealmLike {
 }
 
 export class Unit extends Traits implements Entity {
+  static when<K extends EventType>(t: K, doer: (t: Unit) => any) {
+    return (e: CountyEvent<EventType, unknown>) => {
+      if (e.type === t && e.target instanceof Unit) {
+        doer(e.target);
+      }
+    }
+  }
+
+  static whenTrait<K extends EventType>(t: K, doer: (t: Trait) => any) {
+    return (e: CountyEvent<EventType, unknown>) => {
+      if (e.type === t && e.target instanceof Trait) {
+        doer(e.target);
+      }
+    }
+  }
+
   /**
    * Inject current Unit in trait instance. Should be used in trait constructor ONLY
    */
@@ -53,7 +70,6 @@ export class Unit extends Traits implements Entity {
 
   _destroy() {
     this.clear();
-    this.events.next(new DeleteEvent(this));
     this.events.dispose();
   }
 }
