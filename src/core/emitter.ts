@@ -38,8 +38,12 @@ export class Emitter<T> {
     };
   }
 
-  retranslateTo(e: Emitter<T>): this {
-    const unsub = this.subscribe((value) => e.next(value));
+  retranslateTo(e: Emitter<T>, when: (val: T) => boolean = () => true): this {
+    const unsub = this.subscribe((value) => {
+      if (when(value)) {
+        e.next(value);
+      }
+    });
 
     e.onDispose(unsub);
 

@@ -33,13 +33,13 @@ export class Tie extends Trait implements Serializable<[string, string]> {
 
     this.units = [src, dest];
 
-    this.units.forEach(u => u.as(Ties).__ties.add(this));
+    this.units.forEach(u => u.as(Ties).append(this));
 
     return this;
   }
 
   onBeforeDrop() {
-    this.units.forEach(u => u.find(Ties)?.__ties.delete(this));
+    this.units.forEach(u => u.find(Ties)?.remove(this));
   }
 
   serialize(): [string, string] {

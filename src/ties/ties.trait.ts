@@ -8,7 +8,33 @@ import {Tie} from "./tie.trait";
 export class Ties extends Trait {
   readonly unit = Unit.inject();
 
-  readonly __ties = new Set<Tie>();
+  private readonly __ties = new Set<Tie>();
+
+  append(...ties: Tie[]) {
+    let changed = false;
+    ties.forEach(tie => {
+      if (this.__ties.has(tie)) return;
+
+      this.__ties.add(tie);
+      changed = true;
+    });
+
+    if (changed)
+      this.unit.change(Ties);
+  }
+
+  remove(...ties: Tie[]) {
+    let changed = false;
+    ties.forEach(tie => {
+      if (!this.__ties.has(tie)) return;
+
+      this.__ties.delete(tie);
+      changed = true;
+    });
+
+    if (changed)
+      this.unit.change(Ties);
+  }
 
   select(type: 'out' | 'in', tiesHaving: TC[], targetsHaving: TC[]): Unit[] {
     return this.list(type, targetsHaving)

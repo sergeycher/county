@@ -19,8 +19,14 @@ export class Collection<T extends Entity> {
     return this._items.get(id);
   }
 
-  has(id: string) {
-    return this._items.has(id);
+  has(item: T) {
+    return this._items.has(item.id);
+  }
+
+  map<R extends Entity>(func: (u: T) => R): Collection<R> {
+    const c = new Collection<R>();
+    c.add(...this.items.map(func));
+    return c;
   }
 
   clear() {
@@ -37,7 +43,7 @@ export class Collection<T extends Entity> {
     const deleted: T[] = [];
 
     entities.forEach(e => {
-      if (this.has(e.id)) {
+      if (this.has(e)) {
         this._items.delete(e.id);
         deleted.push(e);
       }
@@ -63,6 +69,17 @@ export class Collection<T extends Entity> {
       this.changes$.next({type: 'add', items: added});
       this._array = undefined;
     }
+  }
+
+  /**
+   * Smart reset - remove all units that NOT in array
+   */
+  reset(items: T[]) {
+    const index = new Set(items);
+    const toRemove = this.items.filter(i => !index.has(i));
+
+    this.drop(...toRemove);
+    this.add(...items);
   }
 
   dispose() {
