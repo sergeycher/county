@@ -1,8 +1,9 @@
-import {CURRENT, Traits, TraitsError} from "./traits/traits";
+import {Traits, TraitsError} from "./traits/traits";
 import {Entity} from "./core/types";
 import {Trait} from "./traits";
 import {EventType} from "./traits/events";
 import {CountyEvent} from "./core/events";
+import {TC} from "./traits/trait";
 
 export interface RealmLike {
   despawn(unit: Unit): void;
@@ -39,6 +40,8 @@ export class Unit extends Traits implements Entity {
    * Inject current Unit in trait instance. Should be used in trait constructor ONLY
    */
   static inject(): Unit {
+    const CURRENT = Traits.inject();
+
     if (CURRENT instanceof Unit) {
       return CURRENT;
     }
@@ -62,6 +65,17 @@ export class Unit extends Traits implements Entity {
 
   constructor(readonly id: string, readonly realm: RealmLike) {
     super();
+  }
+
+  /**
+   * Отслеживает вообще все события связанные с трейтом - даже удаление
+   */
+  onChange<T extends Trait>(Trt: TC<T>, handler: (trait: T) => any) {
+    return this.events.subscribe((e) => {
+      if (e.target instanceof Trt) {
+        handler(e.target);
+      }
+    });
   }
 
   despawn(): void {

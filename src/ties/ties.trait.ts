@@ -1,14 +1,19 @@
-import {TC, Trait} from "../traits/trait";
+import {Lifecycle, TC, Trait} from "../traits/trait";
 import {Unit} from "../unit";
 import {Tie} from "./tie.trait";
 
 /**
  * Трейт для доступа к связям
+ *
+ * TODO: отслеживание связей между сущностями на уровне самой сущности.
+ *   Реализуется легко для добавления и удаления связей, но с трейтами уже сложнее.
  */
 export class Ties extends Trait {
   readonly unit = Unit.inject();
 
   private readonly __ties = new Set<Tie>();
+
+  private readonly lc = Lifecycle.of(this);
 
   append(...ties: Tie[]) {
     let changed = false;
@@ -63,14 +68,18 @@ export class Ties extends Trait {
     return this.list('in', [c]).map(t => t.src.req(c));
   }
 
-  onAfterCreate() {
-    if (this.unit.has(Tie)) {
-      throw new Error(`Unable to use Tie as Ties`);
-    }
-  }
+  constructor() {
+    super();
 
-  onBeforeDrop() {
-    this.list().forEach(t => t.root.despawn());
+    this.lc.on('init', () => {
+      if (this.unit.has(Tie)) {
+        throw new Error(`Unable to use Tie as Ties`);
+      }
+    });
+
+    this.lc.on('drop:before', () => {
+      this.list().forEach(t => t.root.despawn());
+    });
   }
 
   list(type: 'out' | 'in' | 'both' = 'both', withOf: TC[] = []): Tie[] {

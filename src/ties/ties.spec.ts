@@ -1,6 +1,7 @@
 import 'should';
 import {Realm} from "../realm";
 import {Ties} from "./ties.trait";
+import {Tie} from "./tie.trait";
 
 function catcher(doer: () => any): Error {
   try {
@@ -25,18 +26,20 @@ describe('Ties', () => {
     catcher(() => a.as(Ties).tie(a)).should.be.instanceof(Error);
   })
 
-  it('should not be able to connect tie with another tie', () => {
+  it('should not be able to connect to tie', () => {
     const a = realm.unit();
     const b = realm.unit();
 
-    const ab = a.as(Ties).tie(b);
+    const tieAB = a.as(Ties).tie(b);
+
+    catcher(() => a.as(Tie)).should.be.instanceof(Error);
 
     const c = realm.unit();
 
-    catcher(() => c.as(Ties).tie(ab.root)).should.be.instanceof(Error);
-    ab.root.has(Ties).should.be.false();
+    catcher(() => c.as(Ties).tie(tieAB.root)).should.be.instanceof(Error);
+    tieAB.root.has(Ties).should.be.false();
 
-    catcher(() => ab.root.as(Ties)).should.be.instanceof(Error);
+    catcher(() => tieAB.root.as(Ties)).should.be.instanceof(Error);
   });
 
   it('should connect and disconnect', () => {

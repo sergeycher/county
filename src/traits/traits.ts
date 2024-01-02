@@ -1,13 +1,12 @@
 import {Emitter} from "../core/emitter";
 import {traitName} from "./traits-registry";
-import {TC, Trait} from "./trait";
+import {Lifecycle, serializable, TC, Trait} from "./trait";
 import {CountyEvent} from "../core/events";
 import {Change, Create, Delete, EventType} from "./events";
 
 const CONTAINER_KEY = Symbol();
-const ATTACHMENT_KEY = Symbol();
 
-export let CURRENT: Traits | undefined = undefined;
+let CURRENT_TRAITS: Traits | undefined = undefined;
 
 export class TraitsError extends Error {
   constructor(msg: string, readonly entity?: Traits, readonly trait?: Trait) {
@@ -23,15 +22,8 @@ export class Traits {
     return (trait as any)[CONTAINER_KEY] as Traits;
   }
 
-  static from(carrier: Object): Traits {
-    let traits = (carrier as any)[ATTACHMENT_KEY] as Traits;
-
-    if (!traits) {
-      traits = new Traits();
-      (carrier as any)[ATTACHMENT_KEY] = traits;
-    }
-
-    return traits;
+  static inject() {
+    return CURRENT_TRAITS;
   }
 
   private readonly traits = new Map<TC, Trait>();
@@ -45,24 +37,16 @@ export class Traits {
   change<T extends Trait>(Trt: TC<T>, doer?: (trait: T) => any) {
     const trait = this.as(Trt)
 
+    Lifecycle.of(trait).__events.next('change:before');
+
     if (doer) {
       doer(trait);
     }
 
+    Lifecycle.of(trait).__events.next('change:after');
     this.events.next(Change(trait));
 
     return this;
-  }
-
-  /**
-   * Отслеживает вообще все события связанные с трейтом - даже удаление
-   */
-  onChange<T extends Trait>(Trt: TC<T>, handler: (trait: T) => any) {
-    return this.events.subscribe((e) => {
-      if (e.target instanceof Trt) {
-        handler(e.target);
-      }
-    });
   }
 
   /**
@@ -109,28 +93,34 @@ export class Traits {
     return Trts.every(Trt => this.find(Trt));
   }
 
+  /**
+   * Creates new trait.
+   * Immediately removes trait if AfterCreate throws an exception.
+   */
   reset<T extends Trait>(Trt: TC<T>): T {
     this.drop(Trt);
 
-    CURRENT = this;
+    CURRENT_TRAITS = this;
 
     const trait = new Trt();
+    Lifecycle.of(trait).__events.next('init');
     (trait as any)[CONTAINER_KEY] = this;
+
     this.traits.set(Trt, trait);
 
-    // да, сразу два события - одно на создание а второе на изменение
-    // TODO: не уверен что события на создание трейта нужны
-    this.events.next(Create(trait));
-    this.events.next(Change(trait));
-
     try {
-      trait.onAfterCreate();
+      Lifecycle.of(trait).__events.next('create');
+
+      // да, сразу два события - одно на создание а второе на изменение
+      // TODO: не уверен что события на создание трейта нужны
+      this.events.next(Create(trait));
+      this.events.next(Change(trait));
     } catch (e) {
       this.drop(Trt);
       throw e;
     }
 
-    CURRENT = undefined;
+    CURRENT_TRAITS = undefined;
 
     return trait;
   }
@@ -140,9 +130,12 @@ export class Traits {
       const trait = this.find(Trt);
 
       if (trait) {
-        trait.onBeforeDrop();
+        Lifecycle.of(trait).__events.next('drop:before');
+
         this.traits.delete(Trt);
         this.events.next(Delete(trait));
+
+        Lifecycle.of(trait).__dispose();
       }
     });
 
@@ -161,8 +154,11 @@ export class Traits {
     const data: Record<string, any> = {};
 
     this.traits.forEach((trait) => {
-      if (trait.$name && trait.serialize) {
-        data[trait.$name] = trait.serialize();
+      const name = traitName(trait.constructor as TC);
+      const srl = serializable(trait);
+
+      if (name && srl) {
+        data[name] = srl.serialize();
       }
     })
 
@@ -174,11 +170,7 @@ export class Traits {
       const tc = Trait.find(n);
 
       if (tc) {
-        const trait = this.as(tc);
-
-        if (trait.deserialize) {
-          trait.deserialize(data[n]);
-        }
+        serializable(this.as(tc))?.deserialize(data[n]);
       } else {
         console.log(`[ONTHOLOGIC] Unable to find trait "${n}"`)
       }
