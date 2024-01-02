@@ -7,11 +7,12 @@ describe('Units selector', () => {
   let realm = new Realm();
 
   class Trait1 {
-    value = 0;
   }
 
   class Trait2 {
-    value = 0;
+  }
+
+  class TieTrait {
   }
 
   beforeEach(() => {

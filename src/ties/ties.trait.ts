@@ -15,32 +15,6 @@ export class Ties {
 
   private readonly lc = Lifecycle.of(this);
 
-  append(...ties: Tie[]) {
-    let changed = false;
-    ties.forEach(tie => {
-      if (this.__ties.has(tie)) return;
-
-      this.__ties.add(tie);
-      changed = true;
-    });
-
-    if (changed)
-      this.unit.change(Ties);
-  }
-
-  remove(...ties: Tie[]) {
-    let changed = false;
-    ties.forEach(tie => {
-      if (!this.__ties.has(tie)) return;
-
-      this.__ties.delete(tie);
-      changed = true;
-    });
-
-    if (changed)
-      this.unit.change(Ties);
-  }
-
   select(type: 'out' | 'in', tiesHaving: TC[], targetsHaving: TC[]): Unit[] {
     return this.list(type, targetsHaving)
       .filter(t => t.root.has(...tiesHaving))
@@ -95,10 +69,10 @@ export class Ties {
     });
   }
 
-  private _list(type: 'out' | 'in' | 'both'): Tie[] {
+  _list(type: 'out' | 'in' | 'both'): Tie[] {
     const result: Tie[] = [];
 
-    const u = (tie: Tie) => {
+    const tips = (tie: Tie) => {
       if (type === 'in') return [tie.dest];
       if (type === 'out') return [tie.src];
 
@@ -106,11 +80,37 @@ export class Ties {
     }
 
     this.__ties.forEach((tie) => {
-      if (u(tie).includes(this.unit)) {
+      if (tips(tie).includes(this.unit)) {
         result.push(tie);
       }
     });
 
     return result;
+  }
+
+  __append(...ties: Tie[]) {
+    let changed = false;
+    ties.forEach(tie => {
+      if (this.__ties.has(tie)) return;
+
+      this.__ties.add(tie);
+      changed = true;
+    });
+
+    if (changed)
+      this.unit.change(Ties);
+  }
+
+  __remove(...ties: Tie[]) {
+    let changed = false;
+    ties.forEach(tie => {
+      if (!this.__ties.has(tie)) return;
+
+      this.__ties.delete(tie);
+      changed = true;
+    });
+
+    if (changed)
+      this.unit.change(Ties);
   }
 }

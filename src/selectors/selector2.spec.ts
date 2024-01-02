@@ -1,7 +1,7 @@
 import 'should';
 import {Realm} from "../realm";
 import {Unit} from "../unit";
-import {having, Selector} from "./selector2";
+import {having_, Selector} from "./selector2";
 import {Tie, Ties} from "../ties";
 
 describe('Selector 2', () => {
@@ -17,7 +17,7 @@ describe('Selector 2', () => {
     value = 0;
   }
 
-  const selector = Selector.create(having(Trait1));
+  const selector = Selector.create(having_(Trait1));
 
   beforeEach(() => {
     realm = new Realm();

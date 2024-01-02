@@ -5,7 +5,7 @@ State manager based on traits, inspired by Entity-Component-System principle.
 ```typescript
 import {Realm, Ties, Trait} from 'county';
 
-@Trait.register('town')
+@TRAIT('town')
 class Town {
   name = '';
 

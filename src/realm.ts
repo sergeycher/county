@@ -3,6 +3,7 @@ import {Create, Delete, EventType} from "./traits/events";
 import {Emitter} from "./core/emitter";
 import {TC, Trait} from "./traits/trait";
 import {CountyEvent} from "./core/events";
+import {pipe, TraverseFunc} from "./traverse";
 
 function uid() {
   return Math.random().toString(36).split('.')[1];
@@ -38,6 +39,17 @@ export class Realm implements RealmLike {
     const result: T[] = [];
 
     this.units.forEach((u, i) => result.push(doer(u, i)));
+
+    return result;
+  }
+
+  traverse(...funcs: TraverseFunc[]): Unit[] {
+    const result: Unit[] = [];
+    const f = pipe(...funcs);
+
+    this.units.forEach((u) => {
+      result.push(...f(u));
+    });
 
     return result;
   }

@@ -5,6 +5,8 @@ import {CountyEvent} from "../core/events";
 import {EventType} from "../traits/events";
 import {Trait} from "../traits";
 import {Realm} from "../realm";
+import {TC} from "../traits/trait";
+import {pipe, TraverseFunc} from "../traverse";
 
 export class Units extends Collection<Unit> {
   static select(realm: Realm, filt: (item: Unit) => boolean) {
@@ -20,9 +22,16 @@ export class Units extends Collection<Unit> {
     return result;
   }
 
+  static bound(unit: Unit, type: 'out' | 'in', tiesHaving: TC[], targetsHaving: TC[]): Units {
+    const realm = (unit.realm as Realm);
+
+    // TODO
+    return Units.select(realm, (u) => true);
+  }
+
   readonly events = new Emitter<CountyEvent<EventType, Trait | Unit>>();
 
-  constructor(events: Emitter<CountyEvent<EventType, Trait | Unit>>) {
+  protected constructor(events: Emitter<CountyEvent<EventType, Trait | Unit>>) {
     super();
 
     events.retranslateTo(this.events, (e) => {
@@ -39,21 +48,22 @@ export class Units extends Collection<Unit> {
     });
   }
 
-  pipe(func: (item: Unit) => Unit[]): Units {
+  pipe(func: TraverseFunc, ...funcs: TraverseFunc[]): Units {
     const result = new Units(this.events);
-    result.reset(this._reduce(func));
+
+    const update = () => result.reset(this._reduce(func).flatMap(pipe(...funcs)));
+
+    update();
 
     // при любом изменении втупую пересчитываем всю пачку
-    const unsub = this.events.subscribe(() => {
-      result.reset(this._reduce(func));
-    });
+    const unsub = this.events.subscribe(update);
 
     result.changes$.onDispose(unsub);
 
     return result;
   }
 
-  private _reduce(func: (item: Unit) => Unit[]): Unit[] {
+  private _reduce(func: TraverseFunc): Unit[] {
     const result: Unit[] = [];
     this.map(u => {
       result.push(...func(u));

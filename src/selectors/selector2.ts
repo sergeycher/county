@@ -8,13 +8,8 @@ import {CountyEvent} from "../core/events";
 
 export type Filter = (u: Unit) => boolean;
 
-export function having(...Trts: TC[]): Filter {
+export function having_(...Trts: TC[]): Filter {
   return u => u.has(...Trts);
-}
-
-export function where<T extends Trait>(Trt: TC<T>, filt: (t?: T) => boolean): Filter {
-// TODO: должен подписываться на изменения в указанном трейте
-  return u => filt(u.find(Trt));
 }
 
 export class Selector {

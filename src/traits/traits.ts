@@ -69,6 +69,19 @@ export class Traits {
   }
 
   /**
+   * Call func if trait found
+   */
+  for<T extends Trait, A>(Trt: TC<T>, func: (t: T) => A): A | undefined {
+    const trait = this.traits.get(Trt) as T;
+
+    return trait ? func(trait) : undefined;
+  }
+
+  find<T extends Trait>(Trt: TC<T>): T | undefined {
+    return this.for(Trt, (t) => t);
+  }
+
+  /**
    * Require trait. Throws error if trait does not exist
    */
   req<T extends Trait>(Trt: TC<T>): T {
@@ -79,10 +92,6 @@ export class Traits {
     }
 
     return t;
-  }
-
-  find<T extends Trait>(Trt: TC<T>): T | undefined {
-    return this.traits.get(Trt) as T;
   }
 
   has(...Trts: TC[]): boolean {
