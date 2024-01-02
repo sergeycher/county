@@ -1,16 +1,15 @@
 import 'should';
 import {Realm} from "../realm";
-import {Trait} from "../traits";
 import {Collection} from "./collection";
 import {Unit} from "../unit";
 import {having, Selector} from "./selector2";
 import {Ties} from "../ties";
 
-class Trait1 extends Trait {
+class Trait1 {
   value = 0;
 }
 
-class Trait2 extends Trait {
+class Trait2 {
   value = 0;
 }
 

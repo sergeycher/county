@@ -12,7 +12,7 @@ describe('Events', () => {
   let a: Unit, b: Unit;
   let ab: Tie;
 
-  class Trait1 extends Trait {
+  class Trait1 {
     value = 0;
   }
 

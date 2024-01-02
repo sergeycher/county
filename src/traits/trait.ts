@@ -1,5 +1,3 @@
-import {TraitsRegistry} from "./traits-registry";
-import {TRAIT} from "./decorators";
 import {Emitter} from "../core/emitter";
 
 export type TC<T extends Trait = Trait> = new () => T;
@@ -16,7 +14,7 @@ export function serializable<D, O extends Object = any>(obj: O): Serializable<D>
   }
 }
 
-export type LifecycleEvent = 'init' | 'create' | 'drop:before' | 'change:before' | 'change:after';
+export type LifecycleEvent = 'create' | 'drop:before' | 'change:before' | 'change:after';
 
 export class Lifecycle {
   private static KEY = Symbol();
@@ -50,18 +48,4 @@ export class Lifecycle {
 }
 
 // TODO: избавиться от необходимости наследования. Трейт должен быть просто любым классом
-export class Trait {
-  /**
-   * Find trait in registry by name
-   */
-  static find(name: string): TC | undefined {
-    return TraitsRegistry.get().find(name);
-  }
-
-  /**
-   * Decorator
-   */
-  static register(name: string) {
-    return TRAIT(name);
-  }
-}
+export type Trait = Object;

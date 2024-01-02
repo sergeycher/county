@@ -6,7 +6,7 @@ State manager based on traits, inspired by Entity-Component-System principle.
 import {Realm, Ties, Trait} from 'county';
 
 @Trait.register('town')
-class Town extends Trait {
+class Town {
   name = '';
 
   readonly unit = Unit.inject();

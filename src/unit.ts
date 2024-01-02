@@ -30,8 +30,8 @@ export class Unit extends Traits implements Entity {
 
   static whenTrait<K extends EventType>(t: K, doer: (t: Trait) => any) {
     return (e: CountyEvent<EventType, unknown>) => {
-      if (e.type === t && e.target instanceof Trait) {
-        doer(e.target);
+      if (e.type === t && !(e.target instanceof Unit)) {
+        doer(e.target as Trait);
       }
     }
   }
@@ -52,7 +52,7 @@ export class Unit extends Traits implements Entity {
   static from(u: Unit | Trait): Unit {
     let unit: any = u;
 
-    if (u instanceof Trait) {
+    if (!(u instanceof Unit)) {
       unit = Traits.of(u) as Unit;
     }
 

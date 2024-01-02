@@ -5,13 +5,14 @@ import {last} from "../core/utils";
 import {CountyEvent} from "../core/events";
 import {EventType} from "./events";
 import {Unit} from "../unit";
+import {TRAIT} from "./decorators";
 
-class SimpleTrait extends Trait {
+class SimpleTrait {
   value = 1;
 }
 
-@Trait.register('test')
-class SerializableTrait extends Trait implements Serializable<number> {
+@TRAIT('test')
+class SerializableTrait implements Serializable<number> {
   value = 1;
 
   serialize(): number {
@@ -25,7 +26,7 @@ class SerializableTrait extends Trait implements Serializable<number> {
 
 describe('Traits', () => {
   let root = new Traits();
-  let events: CountyEvent<EventType, Unit|Trait>[] = [];
+  let events: CountyEvent<EventType, Unit | Trait>[] = [];
 
   beforeEach(() => {
     root = new Traits();

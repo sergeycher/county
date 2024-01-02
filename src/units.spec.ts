@@ -1,9 +1,8 @@
 import 'should';
 import {Realm} from "./realm";
 import {Unit} from "./unit";
-import {Trait} from "./traits/trait";
 
-class Trait1 extends Trait {
+class Trait1 {
   unit = Unit.inject();
 }
 

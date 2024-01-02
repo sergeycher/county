@@ -1,8 +1,8 @@
-import {Realm, Ties, Trait, Unit} from '../index';
+import {Realm, Ties, TRAIT, Unit} from '../index';
 import 'should';
 
-@Trait.register('town')
-class Town extends Trait {
+@TRAIT('town')
+class Town {
   name = '';
 
   readonly unit = Unit.inject();

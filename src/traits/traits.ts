@@ -1,5 +1,5 @@
 import {Emitter} from "../core/emitter";
-import {traitName} from "./traits-registry";
+import {traitName, TraitsRegistry} from "./traits-registry";
 import {Lifecycle, serializable, TC, Trait} from "./trait";
 import {CountyEvent} from "../core/events";
 import {Change, Create, Delete, EventType} from "./events";
@@ -103,7 +103,6 @@ export class Traits {
     CURRENT_TRAITS = this;
 
     const trait = new Trt();
-    Lifecycle.of(trait).__events.next('init');
     (trait as any)[CONTAINER_KEY] = this;
 
     this.traits.set(Trt, trait);
@@ -167,7 +166,7 @@ export class Traits {
 
   deserialize(data: Record<string, any>) {
     for (const n in data) {
-      const tc = Trait.find(n);
+      const tc = TraitsRegistry.get().find(n);
 
       if (tc) {
         serializable(this.as(tc))?.deserialize(data[n]);

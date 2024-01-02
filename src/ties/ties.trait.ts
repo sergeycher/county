@@ -8,7 +8,7 @@ import {Tie} from "./tie.trait";
  * TODO: отслеживание связей между сущностями на уровне самой сущности.
  *   Реализуется легко для добавления и удаления связей, но с трейтами уже сложнее.
  */
-export class Ties extends Trait {
+export class Ties {
   readonly unit = Unit.inject();
 
   private readonly __ties = new Set<Tie>();
@@ -69,13 +69,9 @@ export class Ties extends Trait {
   }
 
   constructor() {
-    super();
-
-    this.lc.on('init', () => {
-      if (this.unit.has(Tie)) {
-        throw new Error(`Unable to use Tie as Ties`);
-      }
-    });
+    if (this.unit.has(Tie)) {
+      throw new Error(`Unable to use Tie as Ties`);
+    }
 
     this.lc.on('drop:before', () => {
       this.list().forEach(t => t.root.despawn());

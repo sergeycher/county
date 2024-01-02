@@ -1,9 +1,10 @@
-import {Lifecycle, Serializable, Trait} from "../traits/trait";
+import {Lifecycle, Serializable} from "../traits/trait";
 import {Unit} from "../unit";
 import {Ties} from "./ties.trait";
+import {TRAIT} from "../traits";
 
-@Trait.register('-->')
-export class Tie extends Trait implements Serializable<[string, string]> {
+@TRAIT('-->')
+export class Tie implements Serializable<[string, string]> {
   readonly root = Unit.inject();
 
   private units!: [Unit, Unit]; // src, dest | from, to | 0 -> 1
@@ -23,13 +24,9 @@ export class Tie extends Trait implements Serializable<[string, string]> {
   }
 
   constructor() {
-    super();
-
-    this.lifecycle.on('init', () => {
-      if (this.root.has(Ties)) {
-        throw new Error(`Unable to use Ties as Tie`);
-      }
-    });
+    if (this.root.has(Ties)) {
+      throw new Error(`Unable to use Ties as Tie`);
+    }
 
     this.lifecycle.on('drop:before', () => {
       this.units.forEach(u => u.find(Ties)?.remove(this));

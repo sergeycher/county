@@ -1,17 +1,16 @@
 import 'should';
 import {Realm} from "../realm";
-import {Trait} from "../traits";
 import {Units} from "./units";
 import {Ties} from "../ties";
 
 describe('Units selector', () => {
   let realm = new Realm();
 
-  class Trait1 extends Trait {
+  class Trait1 {
     value = 0;
   }
 
-  class Trait2 extends Trait {
+  class Trait2 {
     value = 0;
   }
 

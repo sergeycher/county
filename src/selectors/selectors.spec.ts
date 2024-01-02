@@ -2,7 +2,6 @@ import 'should';
 import {Realm} from "../realm";
 import {Unit} from "../unit";
 import {createSelector} from "./selector";
-import {Trait} from "../traits";
 import {Tie, Ties} from "../ties";
 
 describe('Selectors', () => {
@@ -10,11 +9,11 @@ describe('Selectors', () => {
   let a: Unit, b: Unit;
   let ab: Tie;
 
-  class Trait1 extends Trait {
+  class Trait1 {
     value = 0;
   }
 
-  class Trait2 extends Trait {
+  class Trait2 {
     value = 0;
   }
 
