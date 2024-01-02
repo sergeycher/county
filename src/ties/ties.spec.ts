@@ -62,7 +62,7 @@ describe('Ties', () => {
     const a = realm.unit();
     const b = realm.unit();
 
-    const ab = a.as(Ties).tie(b);
+    a.as(Ties).tie(b);
     b.as(Ties).list('both').should.have.length(1);
 
     a.despawn();

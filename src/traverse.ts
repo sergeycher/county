@@ -8,6 +8,13 @@ export function having(...traits: TC[]): TraverseFunc {
   return (u: Unit) => u.has(...traits) ? [u] : [];
 }
 
+export function exclude(get: () => Unit[]): TraverseFunc {
+  return (u) => {
+    const ex = new Set(get());
+    return ex.has(u) ? [] : [u];
+  }
+}
+
 /**
  * Same as having() but only for ties
  *
@@ -15,6 +22,10 @@ export function having(...traits: TC[]): TraverseFunc {
  */
 export function ties(...traits: TC[]): TraverseFunc {
   return (u: Unit) => u.has(Tie, ...traits) ? [u] : [];
+}
+
+export function pick<T extends Trait>(trait: TC<T>) {
+  return (u: Unit) => u.req(trait)
 }
 
 /**
@@ -106,4 +117,15 @@ export function pipe(...funcs: TraverseFunc[]): TraverseFunc {
 
     return units;
   }
+}
+
+export function traverse(units: Unit[], ...funcs: TraverseFunc[]): Unit[] {
+  const result: Unit[] = [];
+  const f = pipe(...funcs);
+
+  units.forEach((u) => {
+    result.push(...f(u));
+  });
+
+  return result;
 }

@@ -2,6 +2,10 @@ import {Emitter} from "../core/emitter";
 
 export type TC<T extends Trait = Trait> = new () => T;
 
+export function tc<T extends Trait>(t: T): TC<T> {
+  return t.constructor as TC<T>;
+}
+
 export interface Serializable<D> {
   serialize(): D;
 
