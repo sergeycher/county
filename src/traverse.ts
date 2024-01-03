@@ -97,6 +97,9 @@ export function add(...funcs: TraverseFunc[]): TraverseFunc {
   }
 }
 
+/**
+ * Unite results from all functions
+ */
 export function union(...funcs: TraverseFunc[]): TraverseFunc {
   return (unit) => {
     let units: Unit[] = [];
@@ -108,6 +111,9 @@ export function union(...funcs: TraverseFunc[]): TraverseFunc {
   }
 }
 
+/**
+ * Pipe units trough specified functions from left to right
+ */
 export function pipe(...funcs: TraverseFunc[]): TraverseFunc {
   return (unit) => {
     let units = [unit];

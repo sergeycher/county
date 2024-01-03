@@ -1,61 +1,17 @@
-import {exclude, lazy, pick, Realm, Ties, Trait, traverse, TraverseFunc, Unit, walkIn} from '../index';
+import {pick, Realm, Ties, Unit, walkIn} from '../index';
 import 'should';
 import {add, having, pipe, ties, tips, union, walk, where} from "./traverse";
-import {Lifecycle} from "./traits/trait";
-import {Lazy} from "./core/utils";
-
-/**
- * Define bound with traverse from current unit
- *
- * Автоматически (очень неэффективно) отслеживает изменения графа и сбрасывает кеш.
- * Автоматически исключает самого себя из результата.
- */
-export function bound(trait: Trait, ...funcs: TraverseFunc[]): Lazy<Unit[]> {
-  const unit = Unit.inject() || Unit.from(trait);
-
-  const cell = lazy(() => traverse([unit], ...funcs, exclude(() => [unit])));
-
-  const unsub = (unit.realm as Realm).events.subscribe(() => {
-    // FIXME: resetting cache on EVERY event will produce heavy performance issues
-    //  понятия не имею на что подписываться - в выборку потенциально могут попасть любые узлы
-    cell.reset();
-  });
-
-  Lifecycle.of(trait).on('drop:before', () => {
-    unsub();
-    cell.unsubscribe();
-  });
-
-  return cell;
-}
+import {bounds} from "./bounds";
 
 export class Landmark {
   name = '';
 
   readonly unit = Unit.inject();
 
-  readonly neighbours$ = bound(this,
-    walk(Road),
-    tips()
-  );
-
-  get neighbours(): Unit[] {
-    return traverse([this.unit],
-      walk(Road),
-      tips(),
-      exclude(() => [this.unit])
-    );
-  }
-
-  constructor() {
-    (this.unit.realm as Realm).events.subscribe(() => {
-      this.neighbours$.reset();
-    })
-  }
+  readonly neighbours$ = bounds(this, walk(Road), tips());
 }
 
 class Town extends Landmark {
-
 }
 
 class Village extends Landmark {
@@ -98,10 +54,10 @@ describe('Realm', () => {
     a.as(Ties).tie(m);
     k.as(Ties).tie(n).as(Road);
 
-    a.req(Town).neighbours.forEach(u => {
+    a.req(Town).neighbours$().forEach(u => {
       console.log(u.find(Town)?.name || '???');
     })
-    a.req(Town).neighbours.length.should.be.exactly(3);
+    a.req(Town).neighbours$().length.should.be.exactly(3);
 
     realm.traverse(villagesWithRoadsToTown).length.should.be.exactly(5);
 
@@ -141,7 +97,7 @@ describe('Realm', () => {
 
     a.unit.as(Ties).tie(b.unit).as(Road);
 
-    console.log(a.neighbours.map(pick(Town)).map(t => t.name)); // [Egoset]
-    console.log(b.neighbours.map(pick(Town)).map(t => t.name)); // [Vivalia]
+    console.log(a.neighbours$().map(pick(Town)).map(t => t.name)); // [Egoset]
+    console.log(b.neighbours$().map(pick(Town)).map(t => t.name)); // [Vivalia]
   });
 });

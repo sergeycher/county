@@ -1,6 +1,6 @@
 import {Emitter} from "../core/emitter";
 import {traitName, TraitsRegistry} from "./traits-registry";
-import {Lifecycle, serializable, TC, Trait} from "./trait";
+import {lifecycle, Serializable, serializable, TC, Trait} from "./trait";
 import {CountyEvent} from "../core/events";
 import {Change, Create, Delete, EventType} from "./events";
 
@@ -14,7 +14,7 @@ export class TraitsError extends Error {
   }
 }
 
-export class Traits {
+export class Traits implements Serializable<Record<string, any>> {
   /**
    * Returns root object of specified trait
    */
@@ -28,29 +28,29 @@ export class Traits {
 
   private readonly traits = new Map<TC, Trait>();
 
-  // readonly events = new Emitter<TraitsEvent>();
   readonly events = new Emitter<CountyEvent<EventType, Trait>>();
 
   /**
-   * Calls doer on specified trait and emits ChangeEvent
+   * Calls doer() on specified trait and emits ChangeEvent.
+   * Behavior same as `as()`
    */
   change<T extends Trait>(Trt: TC<T>, doer?: (trait: T) => any) {
-    const trait = this.as(Trt)
+    const trait = this.as(Trt);
 
-    Lifecycle.of(trait).__events.next('change:before');
+    lifecycle(trait).emit('change:before');
 
     if (doer) {
       doer(trait);
     }
 
-    Lifecycle.of(trait).__events.next('change:after');
+    lifecycle(trait).emit('change:after');
     this.events.next(Change(trait));
 
     return this;
   }
 
   /**
-   * Returns trait and runs `handler` on it. If trait not exists - creates it.
+   * Returns trait and runs `handler` (if specified) on it. If trait not exists - creates it.
    *
    * handler.init===true if trait created just now
    */
@@ -69,7 +69,7 @@ export class Traits {
   }
 
   /**
-   * Call func if trait found
+   * Call func if trait found, otherwise returns undefined
    */
   for<T extends Trait, A>(Trt: TC<T>, func: (t: T) => A): A | undefined {
     const trait = this.traits.get(Trt) as T;
@@ -83,6 +83,8 @@ export class Traits {
 
   /**
    * Require trait. Throws error if trait does not exist
+   *
+   * Using `.for(Trt, ifExist)` is preferrable
    */
   req<T extends Trait>(Trt: TC<T>): T {
     const t = this.find(Trt);
@@ -117,10 +119,10 @@ export class Traits {
     this.traits.set(Trt, trait);
 
     try {
-      Lifecycle.of(trait).__events.next('create');
+      lifecycle(trait).emit('create');
 
       // да, сразу два события - одно на создание а второе на изменение
-      // TODO: не уверен что события на создание трейта нужны
+      // TODO: не уверен что события на создание трейта вообще нужны
       this.events.next(Create(trait));
       this.events.next(Change(trait));
     } catch (e) {
@@ -135,16 +137,14 @@ export class Traits {
 
   drop(...Traits: TC[]): Traits {
     Traits.forEach(Trt => {
-      const trait = this.find(Trt);
-
-      if (trait) {
-        Lifecycle.of(trait).__events.next('drop:before');
+      this.for(Trt, (trait) => {
+        lifecycle(trait).emit('drop:before');
 
         this.traits.delete(Trt);
-        this.events.next(Delete(trait));
 
-        Lifecycle.of(trait).__dispose();
-      }
+        this.events.next(Delete(trait));
+        lifecycle(trait).end();
+      })
     });
 
     return this;
@@ -158,7 +158,15 @@ export class Traits {
     return this;
   }
 
-  serialize() {
+  /**
+   * Remove all traits and event handlers
+   */
+  destroy() {
+    this.clear();
+    this.events.dispose();
+  }
+
+  serialize(): Record<string, any> {
     const data: Record<string, any> = {};
 
     this.traits.forEach((trait) => {
@@ -173,7 +181,7 @@ export class Traits {
     return data;
   }
 
-  deserialize(data: Record<string, any>) {
+  deserialize(data: Record<string, any>): void {
     for (const n in data) {
       const tc = TraitsRegistry.get().find(n);
 

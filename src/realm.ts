@@ -77,7 +77,7 @@ export class Realm implements RealmLike {
       const deleted = this.delete(u);
 
       if (deleted) {
-        deleted._destroy();
+        deleted.destroy();
         this.events.next(Delete(deleted));
       }
 

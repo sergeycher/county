@@ -57,7 +57,7 @@ export class Unit extends Traits implements Entity {
     }
 
     if (!unit || !(unit instanceof Unit)) {
-      throw new Error('Trait is not belongs to unit');
+      throw new TraitsError('Trait is not belongs to unit', unit);
     }
 
     return unit;
@@ -80,10 +80,5 @@ export class Unit extends Traits implements Entity {
 
   despawn(): void {
     this.realm.despawn(this);
-  }
-
-  _destroy() {
-    this.clear();
-    this.events.dispose();
   }
 }

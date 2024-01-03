@@ -1,16 +1,16 @@
 import 'should';
-import {Serializable, Trait} from "./trait";
+import {Serializable, TRAIT, Trait} from "./trait";
 import {Traits} from "./traits";
 import {last} from "../core/utils";
 import {CountyEvent} from "../core/events";
 import {EventType} from "./events";
 import {Unit} from "../unit";
-import {TRAIT} from "./decorators";
 
 class SimpleTrait {
   value = 1;
 }
 
+// @ts-ignore
 @TRAIT('test')
 class SerializableTrait implements Serializable<number> {
   value = 1;

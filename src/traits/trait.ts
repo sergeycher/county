@@ -1,4 +1,15 @@
-import {Emitter} from "../core/emitter";
+import {Lifecycle} from "../core/lifecycle";
+import {NAME_KEY, TraitsRegistry} from "./traits-registry";
+
+/**
+ * Define trait name. Without name trait cannot be serialized and deserialized.
+ */
+export function TRAIT(name: string) {
+  return (target: TC) => {
+    (target as any)[NAME_KEY] = name;
+    TraitsRegistry.get().register(target);
+  };
+}
 
 export type TC<T extends Trait = Trait> = new () => T;
 
@@ -20,36 +31,10 @@ export function serializable<D, O extends Object = any>(obj: O): Serializable<D>
 
 export type LifecycleEvent = 'create' | 'drop:before' | 'change:before' | 'change:after';
 
-export class Lifecycle {
-  private static KEY = Symbol();
-
-  static of(trait: Object): Lifecycle {
-    let instance = (trait as any)[Lifecycle.KEY];
-
-    if (!instance) {
-      (trait as any)[Lifecycle.KEY] = instance = new Lifecycle(trait);
-    }
-
-    return instance;
-  }
-
-  readonly __events = new Emitter<LifecycleEvent>();
-
-  protected constructor(readonly target: Object) {
-  }
-
-  on(type: LifecycleEvent, handler: () => any) {
-    this.__events.subscribe(e => {
-      if (e === type) {
-        handler();
-      }
-    });
-  }
-
-  __dispose() {
-    this.__events.dispose();
-  }
+export function lifecycle(trait: Trait) {
+  return Lifecycle.of<LifecycleEvent>(trait);
 }
 
 // TODO: избавиться от необходимости наследования. Трейт должен быть просто любым классом
+
 export type Trait = Object;

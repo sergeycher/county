@@ -1,4 +1,4 @@
-import {Lifecycle, TC, Trait} from "../traits/trait";
+import {lifecycle, TC, Trait} from "../traits/trait";
 import {Unit} from "../unit";
 import {Tie} from "./tie.trait";
 
@@ -13,7 +13,7 @@ export class Ties {
 
   private readonly __ties = new Set<Tie>();
 
-  private readonly lc = Lifecycle.of(this);
+  private readonly lc = lifecycle(this);
 
   select(type: 'out' | 'in', tiesHaving: TC[], targetsHaving: TC[]): Unit[] {
     return this.list(type, targetsHaving)

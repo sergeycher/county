@@ -3,38 +3,38 @@ export function last<T>(arr: T[]): T {
 }
 
 export interface Lazy<T> {
-  (onReset?: () => any): T;
+  (subscriber?: () => any): T;
 
-  reset(): void;
+  obsolete(): void;
 
-  subscribe(f: () => any): () => void;
+  on(f: () => any): () => void;
 
-  unsubscribe(f?: () => any): void;
+  off(f?: () => any): void;
 }
 
 export function lazy<T>(func: () => T): Lazy<T> {
   let cache: [T] | [] = [];
   const handlers = new Set<() => any>();
 
-  calculate.reset = () => {
+  calculate.obsolete = () => {
     cache = [];
     handlers.forEach(h => h());
   };
 
-  const subscribe = calculate.subscribe = (f: () => any) => {
+  const subscribe = calculate.on = (f: () => any) => {
     handlers.add(f);
     return () => handlers.delete(f);
   };
 
-  calculate.unsubscribe = (f?: () => any) => {
+  calculate.off = (f?: () => any) => {
     f ? handlers.delete(f) : handlers.clear();
   };
 
   return calculate;
 
-  function calculate(onReset?: () => any) {
-    if (onReset) {
-      subscribe(onReset);
+  function calculate(subscriber?: () => any) {
+    if (subscriber) {
+      subscribe(subscriber);
     }
 
     if (cache.length === 0) {

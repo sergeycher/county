@@ -1,4 +1,4 @@
-import {Lifecycle, Serializable} from "../traits/trait";
+import {lifecycle, Serializable} from "../traits/trait";
 import {Unit} from "../unit";
 import {Ties} from "./ties.trait";
 import {TRAIT} from "../traits";
@@ -9,7 +9,7 @@ export class Tie implements Serializable<[string, string]> {
 
   private units!: [Unit, Unit]; // src, dest | from, to | 0 -> 1
 
-  private lifecycle = Lifecycle.of(this);
+  private lifecycle = lifecycle(this);
 
   get src(): Unit {
     return this.units[0];
